@@ -97,6 +97,7 @@ int main()
 		cout << "+-----------------------------------------------+\n";
 		cout << "|program for working with arithmetic expressions|\n";
 		cout << "+-----------------------------------------------+\n";
+		cout << "operation: '+' '-' '*' '/' '^' 'sin' 'cos' 'abs'\n";
 		cout << "[command for variables]\n";
 		cout << "1. Setup variable\n";
 		cout << "2. Set value of variable\n";
