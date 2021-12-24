@@ -55,8 +55,8 @@ TEST_F(arithmetic_test, test7) {
 	res = 0.792;
 }
 TEST_F(arithmetic_test, test8) {
-	exp = ".5+.34-.12*.4";
-	res = 0.792;
+	exp = "(((1+1)*1+1)*1+1)*1+1";
+	res = 5;
 }
 TEST_F(arithmetic_test, test9) {
 	exp = "1/2*3/4*5/6*7/8";
@@ -65,6 +65,18 @@ TEST_F(arithmetic_test, test9) {
 TEST_F(arithmetic_test, test10) {
 	exp = "2*56^3-12*6/(7+121-(-32-7))";
 	res = 351231.5688622754491018;
+}
+TEST_F(arithmetic_test, test11) {
+	exp = "(((1+1)*1+1)*1+1)*1-1";
+	res = 3;
+}
+TEST_F(arithmetic_test, test12) {
+	exp = "2*56^3-12*6/(7+121-(-32-7))";
+	res = 351231.5688622754491018;
+}
+TEST_F(arithmetic_test, test13) {
+	exp = "-(12+2)-2";
+	res = -16;
 }
 
 //specific tests

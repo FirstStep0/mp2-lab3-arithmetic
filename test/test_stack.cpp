@@ -43,9 +43,9 @@ TEST(my_stack, can_pop_element_from_no_empty_stack) {
 	ASSERT_NO_THROW(st.pop());
 	EXPECT_EQ(st.empty(), true);
 }
-TEST(my_stack, no_throw_when_pop_element_from_empty_stack) {
+TEST(my_stack, throw_when_pop_element_from_empty_stack) {
 	my_stack<int> st;
-	ASSERT_NO_THROW(st.pop());
+	ASSERT_ANY_THROW(st.pop());
 }
 TEST(my_stack, can_clear_stack) {
 	my_stack<int> st;

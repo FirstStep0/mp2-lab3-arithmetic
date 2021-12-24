@@ -25,7 +25,7 @@ public:
 	bool empty() noexcept;     //проверка на пустоту
 	size_t size() noexcept;    //получение количества элементов в стеке
 	void push(const T& value); //вставка элемента
-	void pop();                //извлечение элемента
+	T pop();                   //извлечение элемента
 	T& back();                 //просмотр верхнего элемента (без удаления)
 	void clear();              //очистка стека
 private:
@@ -63,11 +63,14 @@ size_t my_stack<T>::size() noexcept {
 }
 
 template <class T>
-void my_stack<T>::pop() {
+T my_stack<T>::pop() {
 	if (!this->empty()) {
+		T temp = top->value;
 		top = detach_node(top);
 		count--;
+		return temp;
 	}
+	throw std::string("stack is empty");
 }
 
 template <class T>

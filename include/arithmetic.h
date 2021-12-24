@@ -6,6 +6,15 @@
 using namespace std;
 // объ€вление функций и классов дл€ вычислени€ арифметических выражений
 
+struct error {
+	string _what;
+	int _where;
+	error(string _what, int _where) {
+		this->_what = _what;
+		this->_where = _where;
+	}
+};
+
 class arithmetic {
 public:
 	struct operation {
@@ -27,12 +36,12 @@ public:
 	arithmetic();
 	bool is_prefix(string& part, string& whole);
 	bool name_allowed(string& str);
-	double solve(string input);
+	double solve(string& input);
 private:
 	bool check_name();
-	string parse(string& input);
-	double parseToDouble(string& str);
-	double getAns(string& input);
+	string parse(string input);
+	double parseToDouble(const string& str);
+	double getAns(string input);
 	string prepare_for_parse(string input);
 };
 

@@ -5,6 +5,7 @@
 using namespace std;
 
 arithmetic ar;
+const int Exit = 10;
 
 void change_name_of_variable() {
 	int n = -1;
@@ -72,7 +73,6 @@ void change_value() {
 	}
 }
 
-int Exit = 10;
 void Initialize() {
 	ar.val.resize(0);
 	arithmetic::variable v;
@@ -97,7 +97,6 @@ int main()
 		cout << "+-----------------------------------------------+\n";
 		cout << "|program for working with arithmetic expressions|\n";
 		cout << "+-----------------------------------------------+\n";
-		cout << "operation: '+' '-' '*' '/' '^' 'sin' 'cos' 'abs'\n";
 		cout << "[command for variables]\n";
 		cout << "1. Setup variable\n";
 		cout << "2. Set value of variable\n";
@@ -125,13 +124,20 @@ int main()
 			break;
 		}
 		case 4: {
+			cout << "Enter the expression\n";
 			string input;
 			getline(cin, input);
+			cout << "waiting...\n";
 			double res;
 			try {
 				res = ar.solve(input);
-				//cout << "expr: " << 
 				cout << "Answer: " << res << "\n";
+			}
+			catch (error e) {
+				cout << input << "\n";
+				for (int i = 0; i < e._where; i++) cout << " ";
+				cout << "^\n";
+				cout << e._what << "\n";
 			}
 			catch (string e) {
 				cout << e << "\n";

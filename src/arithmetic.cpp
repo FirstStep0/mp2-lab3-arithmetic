@@ -2,6 +2,7 @@
 #include <string>
 #include "..\include\arithmetic.h"
 using namespace std;
+typedef unsigned int uint;
 
 void arithmetic::operation::set(string d, int p, int c, double(*g)(double, double)) {
 	def = d;
@@ -49,13 +50,12 @@ bool arithmetic::name_allowed(string& str) {
 	return true;
 }
 
-double arithmetic::solve(string input) {
+double arithmetic::solve(string &input) {
 	if (!check_name())throw string("wrong variables");
 	input = prepare_for_parse(input);
-	//cout << input << "\n";
-	input = parse(input);
-	//cout << input << "\n";
-	return getAns(input);
+	string in = input;
+	in = parse(in);
+	return getAns(in);
 }
 
 bool arithmetic::check_name() {
@@ -102,21 +102,65 @@ string arithmetic::prepare_for_parse(string input) {
 			}
 			if (cur != ' ')last = cur;
 		}
+		if (temp.size() != 0) {
+			if (temp.size() % 2 == 0) {
+				temp = "+";
+			}
+			else {
+				temp = "-";
+			}
+			output += temp;
+			temp = "";
+		};
 	}
 	return output;
 };
 
-template<class T>
-void push_operation(string& output, my_stack<T>& stack, int priority) {
-	while (!stack.empty() && stack.back().second >= priority) {
-		output += " ";
-		output += stack.back().first;
+string parseToString(uint number) {
+	string res = "";
+	do {
+		res += ((number % 10) + '0');
+		number /= 10;
+	} while (number > 0);
+	return res;
+}
+
+struct info {
+	string def;
+	int pr;
+	int index;
+	info() = default;
+	info(string d, int p, int i) {
+		def = d;
+		pr = p;
+		index = i;
+	}
+};
+
+void push_operation(string& output, my_stack<info>& stack, int priority) {
+	while (!stack.empty() && stack.back().pr >= priority) {
+		output += " " + parseToString((uint)stack.back().index) + "#" + stack.back().def;
 		stack.pop();
 	}
 }
 
-string arithmetic::parse(string& input) {
-	my_stack<pair<string, int>> stack;
+unsigned int parseToUInt(const string& str) {
+	uint res = 0;
+	for (int i = 0; i < str.size(); i++) {
+		if (!('0' <= str[i] && str[i] <= '9'))throw string("error: ParseToUInt()");
+		res *= 10;
+		res += (str[i] - '0');
+	}
+	return res;
+}
+
+void operand(bool& was_operand, bool able, int index) {
+	if (was_operand && able) throw error("lost_operation", index - 1);
+	was_operand = able;
+}
+
+string arithmetic::parse(string input) {
+	my_stack<info> stack;
 	string output = "";
 	string temp = "";
 
@@ -128,6 +172,8 @@ string arithmetic::parse(string& input) {
 	bool was_point = false;  //была ли уже точка при обработке числа double
 	int count_bracket = 0;   //кол-во скобок
 	bool unary_minus = true; //может ли текущий минус быть унарным?
+	int place_bracket = -1;
+	bool was_operand = false;
 
 	for (int i = 0; i < input.size(); i++) {
 		temp += input[i];
@@ -135,12 +181,13 @@ string arithmetic::parse(string& input) {
 
 		if (('0' <= temp[0] && temp[0] <= '9') || temp[0] == '.') {
 			if (!(('0' <= last && last <= '9') || last == '.')) {
-				output += " ";
+				output += " " + parseToString(i) + "#";
 				was_point = false;
+				operand(was_operand, true, i);
 			}
 			if (temp[0] == '.') {
 				if (was_point) {
-					throw string("extra_point");
+					throw error("extra_point", i);
 				}
 				was_point = true;
 			}
@@ -151,6 +198,9 @@ string arithmetic::parse(string& input) {
 		else if (temp[0] == '(' || temp[0] == ')') {
 			if (temp[0] == '(') {
 				extra_pr += 100;
+				if (count_bracket == 0) {
+					place_bracket = i;
+				}
 				count_bracket++;
 				unary_minus = true;
 			}
@@ -161,20 +211,21 @@ string arithmetic::parse(string& input) {
 			}
 
 			if (count_bracket < 0) {
-				throw string("incorrect_bracket");
+				throw error("many_bracket", i);
 			}
 			proc = true;
 		}
 		else if (temp[0] == '-') {
 			if (unary_minus) {
 				push_operation(output, stack, 6 + extra_pr);
-				stack.push({ "`",6 + extra_pr });
+				stack.push({ "`",6 + extra_pr ,i });
 			}
 			else {
 				push_operation(output, stack, 1 + extra_pr);
-				stack.push({ "-",1 + extra_pr });;
+				stack.push({ "-",1 + extra_pr,i });
 			}
 			unary_minus = true;
+			operand(was_operand, false, i);
 			proc = true;
 		}
 		else if (temp[0] == ' ') {
@@ -183,10 +234,10 @@ string arithmetic::parse(string& input) {
 		else {
 			for (int j = 0; j < val.size(); j++) {
 				if (val[j].def == temp) {
-					output += " ";
-					output += temp;
+					output += " " + parseToString(i) + "#" + temp;
 					proc = true;
 					unary_minus = false;
+					operand(was_operand, true, i);
 					break;
 				}
 			}
@@ -195,9 +246,10 @@ string arithmetic::parse(string& input) {
 					if (op[j].def == temp) {
 						int cur_pr = op[j].priority + extra_pr;
 						push_operation(output, stack, cur_pr);
-						stack.push({ op[j].def, cur_pr });
+						stack.push({ op[j].def, cur_pr,i });
 						proc = true;
 						unary_minus = true;
+						operand(was_operand, false, i);
 						break;
 					}
 				}
@@ -209,15 +261,15 @@ string arithmetic::parse(string& input) {
 		last = input[i];
 	}
 	if (temp.size() != 0) {
-		throw string("wrong_command");
+		throw error("wrong_command", input.size() - temp.size());
 	}
 	if (count_bracket > 0) {
-		throw string("incorrect_bracket");
+		throw error("bracket_no_closed", place_bracket);
 	}
 	return output;
 };
 
-double arithmetic::parseToDouble(string& str) {
+double arithmetic::parseToDouble(const string& str) {
 	double res = 0.0;
 	double pos = str.size();
 	for (int i = 0; i < str.size(); i++) {
@@ -232,21 +284,45 @@ double arithmetic::parseToDouble(string& str) {
 	return res / pow(10.0, str.size() - pos);
 }
 
-double arithmetic::getAns(string& input) {
-	my_stack<double> stack;
+int get_index(const string& str) {
 	string temp = "";
+	int i = 0;
+	while (str[i] != '#') {
+		temp += str[i];
+		i++;
+	}
+	return parseToUInt(temp);
+}
+
+string get_command(const string& str) {
+	string temp = "";
+	int i = 0;
+	while (i < str.size() && str[i] != '#') i++;
+	i++;
+	while (i < str.size()) {
+		temp += str[i];
+		i++;
+	}
+	return temp;
+}
+
+double arithmetic::getAns(string input) {
+	my_stack<pair<double,int>> stack;
+	string str = "";
 	input += " ";
 	for (int i = 0; i < input.size(); i++) {
 		char& ch = input[i];
 		if (ch == ' ') {
-			if (temp.size() != 0) {
+			if (str.size() != 0) {
+				int index = get_index(str);
+				string temp = get_command(str);
 				if ((('0' <= temp[0]) && (temp[0] <= '9')) || temp[0] == '.') {
-					stack.push(parseToDouble(temp));
+					stack.push({ parseToDouble(temp),index });
 				}
 				bool flag = false;
 				for (int j = 0; j < val.size(); j++) {
 					if (temp == val[j].def) {
-						stack.push(val[j].value);
+						stack.push({ val[j].value,index });
 						flag = true;
 						break;
 					}
@@ -255,37 +331,40 @@ double arithmetic::getAns(string& input) {
 					for (int j = 0; j < op.size(); j++) {
 						if (temp == op[j].def) {
 							if (stack.size() < op[j].count_arg) {
-								throw string("few_arg");
-								return false;
+								throw error("few_operand", index + 1);
 							}
 							if (op[j].count_arg == 1) {
-								double x = stack.back();
+								double x = stack.back().first;
+								int pos = stack.back().second;
 								stack.pop();
 								double q = op[j].f(x, 0);
-								stack.push(q);
+								stack.push({ q, pos});
 							}
 							else if (op[j].count_arg == 2) {
-								double y = stack.back();
+								double y = stack.back().first;
+								int pos_y = stack.back().second;
 								stack.pop();
-								double x = stack.back();
+								double x = stack.back().first;
+								int pos_x = stack.back().second;
 								stack.pop();
 
 								double q = op[j].f(x, y);
-								stack.push(q);
+								stack.push({ q,min(pos_x,pos_y) });
 							}
 							break;
 						}
 					}
 				}
 			}
-			temp = "";
+			str = "";
 		}
 		else {
-			temp += ch;
+			str += ch;
 		}
 	}
+	//impossible code
 	if (stack.size() > 1) {
-		throw string("few_operands");
+		throw string("lost_operation!");
 	}
-	return stack.back();
+	return stack.pop().first;
 }
