@@ -307,7 +307,7 @@ string get_command(const string& str) {
 }
 
 double arithmetic::getAns(string input) {
-	my_stack<pair<double,int>> stack;
+	my_stack<double> stack;
 	string str = "";
 	input += " ";
 	for (int i = 0; i < input.size(); i++) {
@@ -317,12 +317,12 @@ double arithmetic::getAns(string input) {
 				int index = get_index(str);
 				string temp = get_command(str);
 				if ((('0' <= temp[0]) && (temp[0] <= '9')) || temp[0] == '.') {
-					stack.push({ parseToDouble(temp),index });
+					stack.push(parseToDouble(temp));
 				}
 				bool flag = false;
 				for (int j = 0; j < val.size(); j++) {
 					if (temp == val[j].def) {
-						stack.push({ val[j].value,index });
+						stack.push(val[j].value);
 						flag = true;
 						break;
 					}
@@ -334,22 +334,15 @@ double arithmetic::getAns(string input) {
 								throw error("few_operand", index + 1);
 							}
 							if (op[j].count_arg == 1) {
-								double x = stack.back().first;
-								int pos = stack.back().second;
-								stack.pop();
-								double q = op[j].f(x, 0);
-								stack.push({ q, pos});
+								double x = stack.pop();
+								double result = op[j].f(x, 0);
+								stack.push(result);
 							}
 							else if (op[j].count_arg == 2) {
-								double y = stack.back().first;
-								int pos_y = stack.back().second;
-								stack.pop();
-								double x = stack.back().first;
-								int pos_x = stack.back().second;
-								stack.pop();
-
-								double q = op[j].f(x, y);
-								stack.push({ q,min(pos_x,pos_y) });
+								double y = stack.pop();
+								double x = stack.pop();
+								double result = op[j].f(x, y);
+								stack.push(result);
 							}
 							break;
 						}
@@ -363,8 +356,8 @@ double arithmetic::getAns(string input) {
 		}
 	}
 	//impossible code
-	if (stack.size() > 1) {
+	/*if (stack.size() > 1) {
 		throw string("lost_operation!");
-	}
-	return stack.pop().first;
+	}*/
+	return stack.pop();
 }
